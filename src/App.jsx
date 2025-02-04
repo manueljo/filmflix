@@ -3,7 +3,7 @@ import { useDebounce } from "react-use"
 import Search from "./components/Search"
 import Spinner from "./components/Spinner"
 import MovieCard from "./components/MovieCard"
-import { updateSearchCount } from "./appwrite"
+import { getTrendingMovies, updateSearchCount } from "./appwrite"
 
 const API_BASE_URL = 'https://api.themoviedb.org/3'
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
@@ -22,6 +22,7 @@ function App() {
   const [movieList, setMovieList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const [trendingMovies, setTrendingMovies] = useState([]);
 
   useDebounce(()=> setDebouncedSearchTerm(searchTerm),500,[searchTerm])
 
@@ -55,9 +56,22 @@ function App() {
     }
   }
 
+  const loadTrendingMovies = async () => {
+    try {
+      const movies = await getTrendingMovies();
+      setTrendingMovies(movies)
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
   useEffect(() =>{
     fetchMovies(debouncedSearchTerm);
   }, [debouncedSearchTerm])
+
+  useEffect(() => {
+    loadTrendingMovies();
+  },[]);
 
   return (
   <main>
@@ -68,8 +82,21 @@ function App() {
           <h1>Find <span className="text-gradient">Movies</span> You'll Enjoy Without The Hassle</h1>
         <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm}/>
         </header>
+        {trendingMovies.length > 0 && (
+          <section className="trending">
+            <h2>Trending Movies</h2>
+            <ul>
+              {trendingMovies.map((movie, index) => (
+                <li key={movie.$id}>
+                  <p>{index + 1}</p>
+                  <img src={movie.poster_url} alt={movie.title} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
         <section className="all-movies">
-          <h2 className="mt-[40px]">All movies</h2>
+          <h2>All movies</h2>
           
           {/* {errorMessage && <p className="text-red-500">{errorMessage}</p>} */}
           {isLoading ? (
